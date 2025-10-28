@@ -6,7 +6,6 @@ Ogni cella (i,j) dell'automa presenta tre informazioni:
        	- h: l'altezza del fluido (spessore)
        	- f(dir): il flusso verso la direzione dir
 
-02. STEP DI TRANSIZIONE
 Ad ogni step di transizione, ogni singola cella determinerà
 	1. quanta parte di fluido si sposta verso ciascun vicino
         2. aggiorna le altezze h 
@@ -14,8 +13,14 @@ secondo questa formula:
 
 nuovo_h(i,j) = h(i,j) + somma(flussi entranti) - somma(flussi uscenti)
 
-03. CALCOLO FLUSSI
+02. FUNZIONE DI TRANSIZIONE
+In base allo step, l'automa esegue prima una volta e poi l'altra queste due operazioni:
+	- calcolo flussi
+	- definizione nuova altezza
 
+02.01. CALCOLO FLUSSI
+
+03. CALCOLO FLUSSI
 Considero tutti i vicini della cella (4 per come è stato definito in SciddicaImpl.h) e l'elemento centrale. Ne computo quindi l'altezza totale:
 double w[5]; // 4 vicini + cella centrale
 w[0] = z[i][j] + h[i][j];         // cella corrente
@@ -25,4 +30,41 @@ w[3] = z[i][j+1] + h[i][j+1];     // est
 w[4] = z[i][j-1] + h[i][j-1];     // ovest
 
 Calcolo la differenza di altezza tra la cella corrente e la cella che si trova nei vicini
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
