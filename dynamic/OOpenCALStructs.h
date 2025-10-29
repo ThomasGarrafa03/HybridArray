@@ -141,7 +141,7 @@ class _OOpenCALArray{
                 proxy.ptr = malloc(descriptor.totalSize);
                 
                 #define Field(type, name)\
-                    /*Checks if data should be constructed manually: free() doesn't free dynamically allocated stl data (e.g. vector, string, ...)*/\
+                    /*Checks if data should be constructed manually: free() doesn't free dynamically allocated non-trivial data (e.g. vector, string, ...)*/\
                     /* This particular pattern is called placement new */\
                     /* It makes you construct data on a previously-allocated address.*/\
                     if constexpr(!std::is_trivially_destructible_v<type>){\
@@ -162,7 +162,7 @@ class _OOpenCALArray{
                 delete[] (OOpenCALCell*) proxy.ptr;
             else if constexpr(L == SoA){
                 #define Field(type, name)\
-                    /*Checks if data should be deleted manually: free() doesn't free dynamically allocated stl data (e.g. vector, string, ...)*/\
+                    /*Checks if data should be deleted manually: free() doesn't free dynamically allocated non-trivial data (e.g. vector, string, ...)*/\
                     if constexpr(!std::is_trivially_destructible_v<type>){\
                         void* base = proxy.ptr;\
                         type* field_ptr = (type*)((char*)base + descriptor.offsets[IDX_##name]);\
