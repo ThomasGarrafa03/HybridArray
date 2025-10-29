@@ -4,6 +4,7 @@
 #include <string.h>
 #include <typeinfo>
 #include <string>
+#include <type_traits>
 //pattern X Macro.
 
 //Layout used 
@@ -80,7 +81,7 @@ class Proxy{
 
         //getters and setters, based on the given Layout
         #define Field(type, name) \
-            type get##name(){ \
+            const type& get##name() const{ \
                 if constexpr (L == AoS) { \
                     OOpenCALCell* base = (OOpenCALCell*)ptr;\
                     return base[index].name; \
@@ -90,7 +91,19 @@ class Proxy{
                     return field_ptr[index]; \
                 }\
             }\
-            void set##name(type name) { \
+            \
+            type& get##name(){ \
+                if constexpr (L == AoS) { \
+                    OOpenCALCell* base = (OOpenCALCell*)ptr;\
+                    return base[index].name; \
+                } else if constexpr (L == SoA){ \
+                    void* base = ptr;\
+                    type* field_ptr = (type*)((char*)base + descriptor.offsets[IDX_##name]);\
+                    return field_ptr[index]; \
+                }\
+            }\
+            \
+            void set##name(const type &name) { \
                 if constexpr(L == AoS) { \
                     OOpenCALCell* base = (OOpenCALCell*)ptr;\
                     base[index].name = name; \
@@ -124,16 +137,44 @@ class _OOpenCALArray{
             //notice that constexpr computes this branch during compile time
             if constexpr(L == AoS)
                 proxy.ptr = new OOpenCALCell[capacity];
-            else if constexpr (L == SoA)
+            else if constexpr (L == SoA){
                 proxy.ptr = malloc(descriptor.totalSize);
+                
+                #define Field(type, name)\
+                    /*Checks if data should be constructed manually: free() doesn't free dynamically allocated stl data (e.g. vector, string, ...)*/\
+                    /* This particular pattern is called placement new */\
+                    /* It makes you construct data on a previously-allocated address.*/\
+                    if constexpr(!std::is_trivially_destructible_v<type>){\
+                        void* base = proxy.ptr;\
+                        type* field_ptr = (type*)((char*)base + descriptor.offsets[IDX_##name]);\
+                        for(int i = 0; i< capacity; i++){\
+                            new (field_ptr + i) type(); /* Here I allocate data in the field_ptr + i address, calling the constructor (pattern is 'new (addr) constructor()' )*/\
+                        }\
+                    }
+                    #include "Fields.h"
+                #undef Field   
+            }
         }
 
         //delete the pointer, given the layout
         ~_OOpenCALArray(){
             if constexpr(L == AoS)
                 delete[] (OOpenCALCell*) proxy.ptr;
-            else if constexpr(L == SoA)
+            else if constexpr(L == SoA){
+                #define Field(type, name)\
+                    /*Checks if data should be deleted manually: free() doesn't free dynamically allocated stl data (e.g. vector, string, ...)*/\
+                    if constexpr(!std::is_trivially_destructible_v<type>){\
+                        void* base = proxy.ptr;\
+                        type* field_ptr = (type*)((char*)base + descriptor.offsets[IDX_##name]);\
+                        for(int i = 0; i< capacity; i++){\
+                            using DestructorType = type; /* compiler cannot understand std::x. This using prevents it.*/\
+                            field_ptr[i].~DestructorType();\
+                        }\
+                    }
+                    #include "Fields.h"
+                #undef Field   
                 free(proxy.ptr);
+            }
         }
 
         //set the proxy index and return a reference of it.
