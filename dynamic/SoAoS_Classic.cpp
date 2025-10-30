@@ -2,10 +2,11 @@
 #include <string.h>
 #include <stdio.h>
 #include <utility>
+#include <string>
 
 using namespace std;
 
-#define SIZE 10000000
+#define SIZE 1000000
 #define TIMES 100
 
 struct SoA{
@@ -15,6 +16,8 @@ struct SoA{
     double *padding1;
     float *padding2;
     double *padding3;
+    string *name;
+
     int size;
 
     SoA(int size){
@@ -25,6 +28,7 @@ struct SoA{
         padding1 = new double[size];
         padding2 = new float[size];
         padding3 = new double[size];
+        name = new string[size];
     }
 
     ~SoA(){
@@ -34,6 +38,7 @@ struct SoA{
         delete[]padding1;
         delete[]padding2;
         delete[]padding3;
+        delete[] name;
     }
 };
 
@@ -44,6 +49,7 @@ struct Data{
     double padding1;
     float padding2;
     double padding3;
+    string name;
 
     Data(){
         a = 0;
@@ -72,21 +78,27 @@ int main() {
 
     double sumA = 0;
     double sumB = 0;
+    string concat = "";
 
     auto aos_func = [&]() {
         for (int i = 0; i < SIZE; ++i) { aos.data[i].a = i; }
         for (int i = 0; i < SIZE; ++i) { aos.data[i].b = 0.5f * i; }
+        for (int i = 0; i< SIZE; ++i) {aos.data[i].name = "Helo";}
 
         for (int i = 0; i < SIZE; ++i) { sumA += aos.data[i].a; }
         for (int i = 0; i < SIZE; ++i) { sumB += aos.data[i].b; }
+        for (int i = 0; i< SIZE; ++i) {concat += aos.data[i].name;}
     };
 
     auto soa_func = [&]() {
         for (int i = 0; i < SIZE; ++i) { soa.a[i] = i; }
         for (int i = 0; i < SIZE; ++i) { soa.b[i] = 0.5f * i; }
+        for (int i = 0; i< SIZE; ++i) {soa.name[i]= "Helo";}
 
         for (int i = 0; i < SIZE; ++i) { sumA += soa.a[i]; }
         for (int i = 0; i < SIZE; ++i) { sumB += soa.b[i]; }
+        for (int i = 0; i< SIZE; ++i) {concat += soa.name[i];}
+
     };
     
     double time_aos = computeTime(aos_func, TIMES);
