@@ -4,7 +4,7 @@ Field(char, C)
 Field(double, Padding1)
 Field(float, Padding2)
 Field(double, Padding3)
-Field(std::string, Name) //<-- !!!!
+Field(std::string, Name)
 
-//FieldPtr(type, name) ?
-//see: RAII (instead of using char*, should I use std::string) 
+FieldArray(int, IntArray, 30)
+FieldArray(char, CharArray, 15)

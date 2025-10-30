@@ -2,7 +2,7 @@
 #include "ComputeTime.h"
 using namespace std;
 
-#define SIZE 10000000
+#define SIZE 1000000
 #define TIMES 100
 
 //Direct soa/aos compilation
@@ -18,10 +18,12 @@ using namespace std;
 int main(int argc, char** argv){  
     #if defined(soa) || defined(aos)
     OOpenCALArray arr(SIZE); 
-
+    
     double sumA = 0;
     double sumB = 0;
     string concat = "";
+
+    //you can do this! arr[i].getIntArray()[j] = 19
     
     auto func = [&]() {
         for (int i = 0; i < SIZE; ++i) { arr[i].setA(i); }
