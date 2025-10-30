@@ -24,8 +24,13 @@ class OOpenCALCell;
 enum FieldIndex{
     #define Field(type, name)\
         IDX_##name,
+
+    #define FieldArray(type, name, size)\
+        IDX_##name,
+
     #include "Fields.h"
     #undef Field
+    #undef FieldArray
     Fields_Number //l'n-esimo elemento corrisponde al numero di campi che ho!
 };
 
@@ -44,8 +49,15 @@ struct OffsetDescriptor{
             /*Given the previously computed (and aligned) offset, compute the next offset by multiplyng the capacity(number of elements) with the single element size and repeat, then align*/\
             currentOffset = currentOffset + (capacity * sizeof(type));
             
-            #include "Fields.h"
+        #define FieldArray(type, name, size)\
+            currentOffset = (currentOffset + alignof(type) - 1) & ~(alignof(type) - 1);\
+            offsets[IDX_##name] = currentOffset; \
+            /*Given the previously computed (and aligned) offset, compute the next offset by multiplyng the capacity(number of elements) with the single element size and repeat, then align*/\
+            currentOffset = currentOffset + (capacity * sizeof(type)*size);
+        
+        #include "Fields.h"
         #undef Field
+        #undef FieldArray
 
         totalSize = currentOffset;
     }
@@ -55,13 +67,32 @@ struct OffsetDescriptor{
 class OOpenCALCell{
     private:
         #define Field(type, name) type name; 
+        #define FieldArray(type, name, size) type name[size];
+
         #include "Fields.h"
         #undef Field
+        #undef FieldArray
     public:
-        #undef Field
-        #define Field(type, name) type get##name() {return name;}
+        #define Field(type, name)\
+            type& get##name() {\
+                return name;\
+            }\
+            \
+            const type& get##name() const {\
+                return name;\
+            }\
+            \
+            void set##name(const type& name){\
+                this->name = name;\
+            }
+
+        #define FieldArray(type, name, size)\
+            type* get##name(){return name;}\
+            const type* get##name() const{return name;}
+
         #include "Fields.h"
         #undef Field
+        #undef FieldArray
 
         template<Layout L>
         friend class _OOpenCALArray;
@@ -113,8 +144,33 @@ class Proxy{
                     field_ptr[index] = name; \
                 } \
             }
-            #include "Fields.h"
+        
+        //static c-style arrays    
+        #define FieldArray(type, name, size)\
+            type* get##name(){\
+                if constexpr (L == AoS) { \
+                    OOpenCALCell* base = (OOpenCALCell*)ptr;\
+                    return base[index].name; \
+                } else if constexpr (L == SoA){ \
+                    void* base = ptr;\
+                    type* field_ptr = (type*)((char*)base + descriptor.offsets[IDX_##name]);\
+                    return field_ptr + (index*size); \
+                }\
+            }\
+            const type* get##name() const{\
+                if constexpr (L == AoS) { \
+                    OOpenCALCell* base = (OOpenCALCell*)ptr;\
+                    return base[index].name; \
+                } else if constexpr (L == SoA){ \
+                    void* base = ptr;\
+                    type* field_ptr = (type*)((char*)base + descriptor.offsets[IDX_##name]);\
+                    return field_ptr + (index*size); \
+                }\
+            }
+
+        #include "Fields.h"
         #undef Field
+        #undef FieldArray
 
         friend class _OOpenCALArray<L>;
 };
@@ -151,8 +207,20 @@ class _OOpenCALArray{
                             new (field_ptr + i) type(); /* Here I allocate data in the field_ptr + i address, calling the constructor (pattern is 'new (addr) constructor()' )*/\
                         }\
                     }
-                    #include "Fields.h"
+                
+                //maybe superfluous, but complete. Now you can create, for example, a fixed array of string (string names[30])
+                #define FieldArray(type, name, size)\
+                    if constexpr(!std::is_trivially_destructible_v<type>){\
+                        void* base = proxy.ptr;\
+                        type* field_ptr = (type*)((char*)base + descriptor.offsets[IDX_##name]);\
+                        for(int i = 0; i< capacity*size; i++){\
+                            new (field_ptr + i) type(); /* Here I allocate data in the field_ptr + i address, calling the constructor (pattern is 'new (addr) constructor()' )*/\
+                        }\
+                    }
+                
+                #include "Fields.h"
                 #undef Field   
+                #undef FieldArray
             }
         }
 
@@ -171,8 +239,20 @@ class _OOpenCALArray{
                             field_ptr[i].~DestructorType();\
                         }\
                     }
-                    #include "Fields.h"
+                
+                #define FieldArray(type, name, size)\
+                    if constexpr(!std::is_trivially_destructible_v<type>){\
+                        void* base = proxy.ptr;\
+                        type* field_ptr = (type*)((char*)base + descriptor.offsets[IDX_##name]);\
+                        for(int i = 0; i< capacity*size; i++){\
+                            using DestructorType = type; /* compiler cannot understand std::x. This using prevents it.*/\
+                            field_ptr[i].~DestructorType();\
+                        }\
+                    }    
+                #include "Fields.h"
                 #undef Field   
+                #undef FieldArray
+
                 free(proxy.ptr);
             }
         }
