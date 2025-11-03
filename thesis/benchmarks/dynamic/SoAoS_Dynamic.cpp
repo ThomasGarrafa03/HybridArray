@@ -1,8 +1,8 @@
 //DEFINE NON-TRIVIAL TYPES BEFORE OOpenCALArray.h include (C++ standard)
 #include <string>
 
-#include "../include/OOpenCALArray.h"
-#include "../utils/ComputeTime.h"
+#include "../../include/stateless/OOpenCALArray.h"
+#include "../../utils/ComputeTime.h"
 using namespace std;
 
 #define SIZE 1000000

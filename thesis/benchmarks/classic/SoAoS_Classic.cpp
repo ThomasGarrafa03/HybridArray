@@ -1,7 +1,5 @@
-#include "../utils/ComputeTime.h"
-#include <string.h>
-#include <stdio.h>
-#include <utility>
+#include "../../utils/ComputeTime.h"
+#include <cstdio>
 #include <string>
 
 using namespace std;
