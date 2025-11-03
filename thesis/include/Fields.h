@@ -6,5 +6,4 @@ Field(float, Padding2)
 Field(double, Padding3)
 Field(std::string, Name)
 
-FieldArray(int, IntArray, 30)
-FieldArray(char, CharArray, 15)
+//FieldArray(int, IntArr, 15)
