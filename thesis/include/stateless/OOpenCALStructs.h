@@ -39,7 +39,7 @@ enum FieldIndex{
     #include STR(FIELDS_PATH)
     #undef Field
     #undef FieldArray
-    Fields_Number //l'n-esimo elemento corrisponde al numero di campi che ho!
+    Fields_Number //n-th enum saves the defined fields number
 };
 
 //Stores and computes AoS offsets and the memory total size
