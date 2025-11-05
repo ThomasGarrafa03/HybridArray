@@ -9,12 +9,13 @@ enum Dir{
 
 #include "../include/stateless/OOpenCALArray.h"
 #include <algorithm>
+#include <cstdio>
 
 #define v(r,c) (r)*NCOLS+(c)
-#define NROWS 10
-#define NCOLS 5
+#define NROWS 12
+#define NCOLS 7
 
-#define NSTEPS 100
+#define NSTEPS 10
 #define P_EPSILON 0.001
 #define P_R 0.5
 
@@ -24,29 +25,30 @@ OOpenCALArray writeM(NROWS*NCOLS);
 void init(){
     for (int i = 0; i < NROWS; i++) {
         for (int j = 0; j < NCOLS; j++) {
-            int idx = v(i,j);
+            int currIndex = v(i,j);
 
-            readM[idx].setZ((i+j)%20);   // quota artificiale
-            readM[idx].setH(i==NROWS/2 && j==NCOLS/2 ? 10.0 : 0.0);
+            readM[currIndex].setZ((i+j)%20);   // quota artificiale
+            readM[currIndex].setH(i==NROWS/2 && j==NCOLS/2 ? 10.0 : 0.0);
             
             for(int d = 0; d<DirNumber; ++d)
-                readM[idx].getF()[d] = 0.0;
+                readM[currIndex].getF()[d] = 0.0;
         }
     }
 }
 
 void sciddicaFlowsComputation(int i, int j){
     int currIndex = v(i,j);
-    bool eliminated_cells[DirNumber];
+    int neighborhoodSize = DirNumber+1;
+    bool eliminated_cells[neighborhoodSize];
 
-    for(int n = 0; n< DirNumber; n++)
+    for(int n = 0; n< neighborhoodSize; n++)
         eliminated_cells[n] = false;
 
 	bool again = false;
 	int cells_count = 0, n = 0;
-	double avarage = 0.0, m = 0.0, u[DirNumber];
+	double avarage = 0.0, m = 0.0, u[neighborhoodSize];
 
-    for(int n = 0; n< DirNumber; n++)
+    for(int n = 0; n< neighborhoodSize; n++)
         u[n] = 0.0;
 		
 	if(readM[currIndex].getH() <= P_EPSILON)
@@ -77,7 +79,7 @@ void sciddicaFlowsComputation(int i, int j){
 		avarage = m;
 		cells_count = 0;
 			
-		for(n=0; n<DirNumber; n++){
+		for(n=0; n<neighborhoodSize; n++){
 			if(!eliminated_cells[n]){
 				avarage += u[n];
 					cells_count++;
@@ -87,7 +89,7 @@ void sciddicaFlowsComputation(int i, int j){
 		if(cells_count != 0)
 			avarage /= cells_count;
 				
-		for(n=0; n<DirNumber; n++){
+		for(n=0; n<neighborhoodSize; n++){
 			if((avarage <= u[n]) && (!eliminated_cells[n])){
 				eliminated_cells[n] = true;
 				again = true;
@@ -104,7 +106,7 @@ void sciddicaFlowsComputation(int i, int j){
 	writeM[currIndex].setH(h);
 	writeM[currIndex].setZ(z);
 			
-	for(n=1; n<DirNumber; n++){
+	for(n=1; n<neighborhoodSize; n++){
 		if(eliminated_cells[n]){
             writeM[currIndex].getF()[n-1] = 0.0;
 		}
@@ -131,17 +133,31 @@ Dir computeDirection(int di, int dj){
 }
 
 void sciddicaWidthUpdate(int i, int j){
+    int currIndex = v(i,j);
     double h_next = 0.0;
 
-	h_next = readM[v(i,j)].getH();
+	h_next = readM[currIndex].getH();
 	
     for(int di = -1; di<2; di++){
         for(int dj =-1; dj<2; dj++){
-            if(abs(di)+abs(dj) <= 1 && di != dj) //von neumann
-                h_next += readM[v(i,j)].getF()[computeOppositeDirection(di, dj)] - readM[v(i,j)].getF()[computeDirection(di,dj)];
+            //von neumann
+            if(abs(di)+abs(dj) <= 1 && di != dj) {
+                int neighborIndex = v(i + di, j + dj);
+
+                double f_in = readM[neighborIndex].getF()[computeOppositeDirection(di, dj)];
+                double f_out = readM[currIndex].getF()[computeDirection(di, dj)];
+
+                h_next += f_in-f_out;
+            }   
         }
     }
 	
+    writeM[currIndex].setZ( readM[currIndex].getZ() );
+
+    double* readF = readM[currIndex].getF();
+    double* writeF = writeM[currIndex].getF();
+    std::copy(readF, readF + DirNumber, writeF);
+
     writeM[v(i,j)].setH(h_next);
 }
 
@@ -157,11 +173,40 @@ void transfunc(int step){
     }
 }
 
+void print(){
+    printf("H: \n");
+    for(int i = 1; i<NROWS-1; i++){
+        for(int j = 1; j<NCOLS-1; j++){
+            printf("%04.2f ", readM[v(i,j)].getH());
+        }
+        printf("\n");
+    }
+
+    printf("\n");
+    printf("Z:\n");
+
+    for(int i = 1; i<NROWS-1; i++){
+        for(int j = 1; j<NCOLS-1; j++){
+            printf("%04.2f ", readM[v(i,j)].getZ());
+        }
+        printf("\n");
+    }
+
+}
+
 int main(){
     init();
+    //just the initial print, for testing purposes
+    printf("** INITIAL CONFIGURATION: **\n");
+    print();
+    printf("\n");
     for(int step = 0; step<NSTEPS; step++){
         //print(step);
         transfunc(step);
         readM.swap(writeM);
     }
+    //just the final print, for testing purposes
+    printf("** FINAL CONFIGURATION: **\n");
+    print();
 }
+
