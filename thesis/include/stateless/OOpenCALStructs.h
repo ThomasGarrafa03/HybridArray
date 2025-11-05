@@ -12,6 +12,7 @@
 #include <cstdlib> //for malloc, free, ...
 #include <type_traits> //for is_trivially_destructible_v<V>
 #include <new> //for placement new
+#include <algorithm> //for swap
 
 //pattern X Macro.
 
@@ -268,6 +269,12 @@ class _OOpenCALArray{
         Proxy<L> operator[](size_t index){
             return Proxy<L>(ptr, descriptor, index);
         } 
+
+        void swap(_OOpenCALArray &other){
+            std::swap(ptr, other.ptr);
+            std::swap(capacity, other.capacity);
+            std::swap(descriptor, other.descriptor);
+        }
 };
 
 #endif
