@@ -270,7 +270,7 @@ class _HybridArray{
             return Proxy<L>(ptr, descriptor, index);
         } 
 
-        void swap _HybridArray &other){
+        void swap (_HybridArray &other){
             std::swap(ptr, other.ptr);
             //std::swap(capacity, other.capacity);
             //std::swap(descriptor, other.descriptor);

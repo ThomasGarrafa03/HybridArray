@@ -122,7 +122,7 @@ class Proxy{
         #define Field(type, name) \
             const type& get##name() const{ \
                 if constexpr (L == aos) { \
-                 AoSCell* base = static_cast AoSCell*>(ptr);\
+                 AoSCell* base = static_cast<AoSCell*>(ptr);\
                     return base[index].name; \
                 } else if constexpr (L == soa){ \
                     void* base = ptr;\
@@ -133,7 +133,7 @@ class Proxy{
             \
             type& get##name(){ \
                 if constexpr (L == aos) { \
-                 AoSCell* base = static_cast AoSCell*>(ptr);\
+                 AoSCell* base = static_cast<AoSCell*>(ptr);\
                     return base[index].name; \
                 } else if constexpr (L == soa){ \
                     void* base = ptr;\
@@ -144,7 +144,7 @@ class Proxy{
             \
             void set##name(const type &name) { \
                 if constexpr(L == aos) { \
-                 AoSCell* base = static_cast AoSCell*>(ptr);\
+                 AoSCell* base = static_cast<AoSCell*>(ptr);\
                     base[index].name = name; \
                 } else if constexpr(L == soa){ \
                     void* base = ptr;\
@@ -157,7 +157,7 @@ class Proxy{
         #define FieldArray(type, name, size)\
             type* get##name(){\
                 if constexpr (L == aos) { \
-                 AoSCell* base = static_cast AoSCell*>(ptr);\
+                 AoSCell* base = static_cast<AoSCell*>(ptr);\
                     return base[index].name; \
                 } else if constexpr (L == soa){ \
                     void* base = ptr;\
@@ -167,7 +167,7 @@ class Proxy{
             }\
             const type* get##name() const{\
                 if constexpr (L == aos) { \
-                 AoSCell* base = static_cast AoSCell*>(ptr);\
+                 AoSCell* base = static_cast<AoSCell*>(ptr);\
                     return base[index].name; \
                 } else if constexpr (L == soa){ \
                     void* base = ptr;\
@@ -235,7 +235,7 @@ class _HybridArray{
         //delete the pointer, given the layout
         ~_HybridArray(){
             if constexpr(L == aos)
-                delete[] static_cast AoSCell*>(proxy.ptr);
+                delete[] static_cast<AoSCell*>(proxy.ptr);
             else if constexpr(L == soa){
                 #define Field(type, name)\
                     /*Checks if data should be deleted manually: free() doesn't free dynamically allocated non-trivial data (e.g. vector, string, ...)*/\
