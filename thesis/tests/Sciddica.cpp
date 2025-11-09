@@ -7,15 +7,15 @@ enum Dir{
     DirNumber
 };
 
-#include "../include/stateless/OOpenCALArray.h"
+#include "../include/hybridArray/HybridArray.h"
 #include <algorithm>
 #include <cstdio>
 
 #define v(r,c) (r)*NCOLS+(c)
 #define NROWS 12
-#define NCOLS 7
+#define NCOLS 22
 
-#define NSTEPS 10
+#define NSTEPS 30
 #define P_EPSILON 0.001
 #define P_R 0.5
 
@@ -29,7 +29,7 @@ void init(){
 
             readM[currIndex].setZ((i+j)%20);   // quota artificiale
             readM[currIndex].setH(i==NROWS/2 && j==NCOLS/2 ? 10.0 : 0.0);
-            
+
             for(int d = 0; d<DirNumber; ++d)
                 readM[currIndex].getF()[d] = 0.0;
         }
@@ -187,7 +187,7 @@ void print(){
 
     for(int i = 1; i<NROWS-1; i++){
         for(int j = 1; j<NCOLS-1; j++){
-            printf("%04.2f ", readM[v(i,j)].getZ());
+            printf("%04.0f ", readM[v(i,j)].getZ());
         }
         printf("\n");
     }

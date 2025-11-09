@@ -1,7 +1,7 @@
 //DEFINE NON-TRIVIAL TYPES BEFORE OOpenCALArray.h include (C++ standard)
 #include <string>
 
-#include "../../include/stateless/OOpenCALArray.h"
+#include "../../include/hybridArray/HybridArray.h"
 #include "../../utils/ComputeTime.h"
 using namespace std;
 
@@ -10,7 +10,7 @@ using namespace std;
 
 int main(int argc, char** argv){  
     
-    OOpenCALArray arr(SIZE);
+    HybridArray arr(SIZE);
     
     int sumA = 0;
     float sumB = 0;
