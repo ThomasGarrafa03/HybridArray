@@ -19,14 +19,13 @@ enum Dir{
 #define P_EPSILON 0.001
 #define P_R 0.5
 
-OOpenCALArray readM(NROWS*NCOLS);
-OOpenCALArray writeM(NROWS*NCOLS);
+HybridArray readM(NROWS*NCOLS);
+HybridArray writeM(NROWS*NCOLS);
 
 void init(){
     for (int i = 0; i < NROWS; i++) {
         for (int j = 0; j < NCOLS; j++) {
             int currIndex = v(i,j);
-
             readM[currIndex].setZ((i+j)%20);   // quota artificiale
             readM[currIndex].setH(i==NROWS/2 && j==NCOLS/2 ? 10.0 : 0.0);
 
