@@ -1,5 +1,5 @@
-#ifndef OOCAL_STRUCTS
-#define OOCAL_STRUCTS
+#ifndef HYBRID_STRUCTS
+#define HYBRID_STRUCTS
 
 //"If you want to stringify the result of expansion of a macro argument, you have to use two levels of macros." (see compiler docs)
 #define QUOTE(x) #x
@@ -12,7 +12,6 @@
 #include <cstdlib> //for malloc, free, ...
 #include <type_traits> //for is_trivially_destructible_v<V>
 #include <new> //for placement new
-#include <algorithm> //for swap
 
 //pattern X Macro.
 
@@ -25,9 +24,9 @@ enum Layout{
 template<Layout L>
 class Proxy;
 template<Layout L>
-class _OOpenCALArray;
+class _HybridArray;
 
-class OOpenCALCell;
+class AoSCell;
 
 //Field indexes, (size included)
 enum FieldIndex{
@@ -73,7 +72,7 @@ struct OffsetDescriptor{
 };
 
 //generic AoS single cell data
-class OOpenCALCell{
+class AoSCell{
     private:
         #define Field(type, name) type name; 
         #define FieldArray(type, name, size) type name[size];
@@ -104,7 +103,7 @@ class OOpenCALCell{
         #undef FieldArray
 
         template<Layout L>
-        friend class _OOpenCALArray;
+        friend class _HybridArray;
 
         template<Layout L>
         friend class Proxy;
@@ -117,13 +116,13 @@ class Proxy{
         const OffsetDescriptor& descriptor; //the previously created descriptor reference
         size_t index; 
     public:
-        Proxy(void* ptr, const OffsetDescriptor &descriptor, size_t index): ptr(ptr), descriptor(descriptor) ,index(index) {}
+        Proxy(void* ptr, const OffsetDescriptor &descriptor): ptr(ptr), descriptor(descriptor) ,index(0) {}
 
         //getters and setters, based on the given Layout
         #define Field(type, name) \
             const type& get##name() const{ \
                 if constexpr (L == aos) { \
-                    OOpenCALCell* base = static_cast<OOpenCALCell*>(ptr);\
+                 AoSCell* base = static_cast AoSCell*>(ptr);\
                     return base[index].name; \
                 } else if constexpr (L == soa){ \
                     void* base = ptr;\
@@ -134,7 +133,7 @@ class Proxy{
             \
             type& get##name(){ \
                 if constexpr (L == aos) { \
-                    OOpenCALCell* base = static_cast<OOpenCALCell*>(ptr);\
+                 AoSCell* base = static_cast AoSCell*>(ptr);\
                     return base[index].name; \
                 } else if constexpr (L == soa){ \
                     void* base = ptr;\
@@ -145,7 +144,7 @@ class Proxy{
             \
             void set##name(const type &name) { \
                 if constexpr(L == aos) { \
-                    OOpenCALCell* base = static_cast<OOpenCALCell*>(ptr);\
+                 AoSCell* base = static_cast AoSCell*>(ptr);\
                     base[index].name = name; \
                 } else if constexpr(L == soa){ \
                     void* base = ptr;\
@@ -158,7 +157,7 @@ class Proxy{
         #define FieldArray(type, name, size)\
             type* get##name(){\
                 if constexpr (L == aos) { \
-                    OOpenCALCell* base = static_cast<OOpenCALCell*>(ptr);\
+                 AoSCell* base = static_cast AoSCell*>(ptr);\
                     return base[index].name; \
                 } else if constexpr (L == soa){ \
                     void* base = ptr;\
@@ -168,7 +167,7 @@ class Proxy{
             }\
             const type* get##name() const{\
                 if constexpr (L == aos) { \
-                    OOpenCALCell* base = static_cast<OOpenCALCell*>(ptr);\
+                 AoSCell* base = static_cast AoSCell*>(ptr);\
                     return base[index].name; \
                 } else if constexpr (L == soa){ \
                     void* base = ptr;\
@@ -181,36 +180,36 @@ class Proxy{
         #undef Field
         #undef FieldArray
 
-        friend class _OOpenCALArray<L>;
+        friend class _HybridArray<L>;
 };
 
 //The array with a predefined layout, defined in compile-time.
 template<Layout L>
-class _OOpenCALArray{
+class _HybridArray{
     private:
-        void * ptr;
+        Proxy<L> proxy;
         OffsetDescriptor descriptor; //offset description (used for SoA only)       
         size_t capacity; //the number of elements
 
     public: 
-        _OOpenCALArray(size_t capacity): 
+        _HybridArray(size_t capacity): 
             capacity(capacity), 
             descriptor(capacity),
-            ptr(nullptr)
+            proxy(nullptr,descriptor)
         {
             //create the proper pointer, given the layout.
             //notice that constexpr computes this branch during compile time
             if constexpr(L == aos)
-                ptr = new OOpenCALCell[capacity];
+                proxy.ptr = new AoSCell[capacity];
             else if constexpr (L == soa){
-                ptr = malloc(descriptor.totalSize);
+                proxy.ptr = malloc(descriptor.totalSize);
                 
                 #define Field(type, name)\
                     /*Checks if data should be constructed manually: free() doesn't free dynamically allocated non-trivial data (e.g. vector, string, ...)*/\
                     /* This particular pattern is called placement new */\
                     /* It makes you construct data on a previously-allocated address.*/\
                     if constexpr(!std::is_trivially_destructible_v<type>){\
-                        void* base = ptr;\
+                        void* base = proxy.ptr;\
                         type* field_ptr = reinterpret_cast<type*>(static_cast<char*>(base) + descriptor.offsets[IDX_##name]);\
                         for(int i = 0; i< capacity; i++){\
                             new (field_ptr + i) type(); /* Here I allocate data in the field_ptr + i address, calling the constructor (pattern is 'new (addr) constructor()' )*/\
@@ -220,7 +219,7 @@ class _OOpenCALArray{
                 //maybe superfluous, but complete. Now you can create, for example, a fixed array of string (string names[30])
                 #define FieldArray(type, name, size)\
                     if constexpr(!std::is_trivially_destructible_v<type>){\
-                        void* base = ptr;\
+                        void* base = proxy.ptr;\
                         type* field_ptr = reinterpret_cast<type*>(static_cast<char*>(base) + descriptor.offsets[IDX_##name]);\
                         for(int i = 0; i< capacity*size; i++){\
                             new (field_ptr + i) type(); /* Here I allocate data in the field_ptr + i address, calling the constructor (pattern is 'new (addr) constructor()' )*/\
@@ -234,14 +233,14 @@ class _OOpenCALArray{
         }
 
         //delete the pointer, given the layout
-        ~_OOpenCALArray(){
+        ~_HybridArray(){
             if constexpr(L == aos)
-                delete[] static_cast<OOpenCALCell*>(ptr);
+                delete[] static_cast AoSCell*>(proxy.ptr);
             else if constexpr(L == soa){
                 #define Field(type, name)\
                     /*Checks if data should be deleted manually: free() doesn't free dynamically allocated non-trivial data (e.g. vector, string, ...)*/\
                     if constexpr(!std::is_trivially_destructible_v<type>){\
-                        void* base = ptr;\
+                        void* base = proxy.ptr;\
                         type* field_ptr = reinterpret_cast<type*>(static_cast<char*>(base) + descriptor.offsets[IDX_##name]);\
                         for(int i = 0; i< capacity; i++){\
                             using DestructorType = type; /* compiler cannot understand std::x. This using prevents it.*/\
@@ -251,7 +250,7 @@ class _OOpenCALArray{
                 
                 #define FieldArray(type, name, size)\
                     if constexpr(!std::is_trivially_destructible_v<type>){\
-                        void* base = ptr;\
+                        void* base = proxy.ptr;\
                         type* field_ptr = reinterpret_cast<type*>(static_cast<char*>(base) + descriptor.offsets[IDX_##name]);\
                         for(int i = 0; i< capacity*size; i++){\
                             using DestructorType = type; /* compiler cannot understand std::x. This using prevents it.*/\
@@ -262,19 +261,14 @@ class _OOpenCALArray{
                 #undef Field   
                 #undef FieldArray
 
-                free(ptr);
+                free(proxy.ptr);
             }
         }
 
-        Proxy<L> operator[](size_t index){
-            return Proxy<L>(ptr, descriptor, index);
+        Proxy<L> &operator[](size_t index){
+            proxy.index = index;
+            return proxy;
         } 
-
-        void swap(_OOpenCALArray &other){
-            std::swap(ptr, other.ptr);
-            std::swap(capacity, other.capacity);
-            std::swap(descriptor, other.descriptor);
-        }
 };
 
 #endif
