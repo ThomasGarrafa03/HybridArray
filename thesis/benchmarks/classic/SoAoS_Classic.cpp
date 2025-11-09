@@ -78,7 +78,7 @@ int main() {
     double sumB = 0;
     string concat = "";
 
-    auto aos_func = [&]() {
+    auto aos_func_separated = [&]() {
         for (int i = 0; i < SIZE; ++i) { aos.data[i].a = i; }
         for (int i = 0; i < SIZE; ++i) { aos.data[i].b = 0.5f * i; }
         for (int i = 0; i< SIZE; ++i) {aos.data[i].name = "Helo";}
@@ -88,7 +88,7 @@ int main() {
         for (int i = 0; i< SIZE; ++i) {concat += aos.data[i].name;}
     };
 
-    auto soa_func = [&]() {
+    auto soa_func_separated = [&]() {
         for (int i = 0; i < SIZE; ++i) { soa.a[i] = i; }
         for (int i = 0; i < SIZE; ++i) { soa.b[i] = 0.5f * i; }
         for (int i = 0; i< SIZE; ++i) {soa.name[i]= "Helo";}
@@ -98,10 +98,43 @@ int main() {
         for (int i = 0; i< SIZE; ++i) {concat += soa.name[i];}
 
     };
-    
-    double time_aos = computeTime(aos_func, TIMES);
-    double time_soa = computeTime(soa_func, TIMES);
 
-    printf("AOS average time elapsed: %f\n", time_aos);
-    printf("SOA average time elapsed: %f\n", time_soa);
+    auto aos_func_single = [&]() {
+        for (int i = 0; i < SIZE; ++i) { 
+            aos.data[i].a = i; 
+            aos.data[i].b = 0.5f * i; 
+            aos.data[i].name = "Helo";
+        }
+
+        for (int i = 0; i < SIZE; ++i) { 
+            sumA += aos.data[i].a; 
+            sumB += aos.data[i].b;
+            concat += aos.data[i].name; 
+        }
+    };
+
+    auto soa_func_single = [&]() {
+        for (int i = 0; i < SIZE; ++i) { 
+            soa.a[i] = i; 
+            soa.b[i] = 0.5f * i;
+            soa.name[i]= "Helo";
+        }
+
+        for (int i = 0; i < SIZE; ++i) { 
+            sumA += soa.a[i]; 
+            sumB += soa.b[i];
+            concat += soa.name[i];
+        }
+    };
+    
+    double time_aos_separated = computeTime(aos_func_separated, TIMES);
+    double time_soa_separated = computeTime(soa_func_separated, TIMES);
+    double time_aos_single = computeTime(aos_func_single, TIMES);
+    double time_soa_single = computeTime(soa_func_single, TIMES);
+
+    printf("AOS average time elapsed (separated for): %f\n", time_aos_separated);
+    printf("SOA average time elapsed (separated for): %f\n", time_soa_separated);
+    
+    printf("AOS average time elapsed (single for): %f\n", time_aos_single);
+    printf("SOA average time elapsed (single for): %f\n", time_soa_single);
 }
