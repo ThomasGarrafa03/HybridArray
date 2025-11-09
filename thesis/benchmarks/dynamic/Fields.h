@@ -1,0 +1,7 @@
+FIELD(int, A)
+FIELD(float, B)
+FIELD(char, C)
+FIELD(double, Padding1)
+FIELD(double, Padding2)
+FIELD(double, Padding3)
+FIELD(std::string, Name)
