@@ -1,7 +1,0 @@
-Field(int, A)
-Field(float, B)
-Field(char, C)
-Field(double, Padding1)
-Field(double, Padding2)
-Field(double, Padding3)
-Field(std::string, Name)

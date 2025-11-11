@@ -7,6 +7,11 @@ enum Dir{
     DirNumber
 };
 
+#define INITFIELDS\
+    Field(double, Z)\
+    Field(double, H)\
+    FieldArray(double, F, DirNumber)
+
 #include "../../include/hybridArray/HybridArray.h"
 #include "../../utils/ComputeTime.h"
 #include <algorithm>

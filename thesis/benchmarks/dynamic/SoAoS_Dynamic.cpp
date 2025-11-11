@@ -1,12 +1,17 @@
 //DEFINE NON-TRIVIAL TYPES BEFORE OOpenCALArray.h include (C++ standard)
 #include <string>
 
+#define INITFIELDS\
+    Field(int, A)\
+    Field(float, B)\
+    Field(std::string, Name)
+
 #include "../../include/hybridArray/HybridArray.h"
 #include "../../utils/ComputeTime.h"
 using namespace std;
 
-#define SIZE 1000000
-#define TIMES 100
+#define SIZE 10000000
+#define TIMES 10
 
 int main(int argc, char** argv){  
     

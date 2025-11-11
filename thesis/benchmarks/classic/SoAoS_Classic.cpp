@@ -4,55 +4,49 @@
 
 using namespace std;
 
-#define SIZE 1000000
-#define TIMES 100
+#define SIZE 10000000
+#define TIMES 10
 
 struct SoA{
     int *a;
+    //char *c;
     float *b; 
-    char *c;
-    double *padding1;
-    float *padding2;
-    double *padding3;
     string *name;
 
     int size;
 
     SoA(int size){
         this->size = size;
-        a = new int[size];
-        b = new float[size]; 
-        c = new char[size];
-        padding1 = new double[size];
-        padding2 = new float[size];
-        padding3 = new double[size];
+        a = new int[size]; 
+        //c = new char[size];
+        b = new float[size];
         name = new string[size];
+
+        int diffAB = (char*)a -(char*)b;
+        int diffBName = (char*)b -(char*)name;
+
+        printf("[SoA-debug]diffAB: %d\n diffBName: %d\n" , diffAB, diffBName);
+
     }
 
     ~SoA(){
         delete[]a;
         delete[]b;
-        delete[]c;
-        delete[]padding1;
-        delete[]padding2;
-        delete[]padding3;
+        //delete[]c;
         delete[] name;
     }
 };
 
 struct Data{
     int a;
+    //char c;
     float b;
-    char c;
-    double padding1;
-    float padding2;
-    double padding3;
     string name;
 
     Data(){
         a = 0;
         b = 0.0;
-        c = ' ';
+        //c = ' ';
     }
 };
 

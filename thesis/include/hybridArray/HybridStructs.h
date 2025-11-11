@@ -1,12 +1,8 @@
 #ifndef HYBRYD_STRUCTS
 #define HYBRID_STRUCTS
 
-//"If you want to stringify the result of expansion of a macro argument, you have to use two levels of macros." (see compiler docs)
-#define QUOTE(x) #x
-#define STR(x) QUOTE(x)
-
-#ifndef FIELDS_PATH
-    #define FIELDS_PATH Fields.h
+#ifndef INITFIELDS
+    #error "\033[31mERROR: INITFIELDS macro not included.\n USAGE:\n 1.define INITFIELDS, and inside it add your desired Field or FieldArray fields.\n 2. include this library\033[0m"
 #endif
 
 #include <cstdlib> //for malloc, free, ...
@@ -14,9 +10,7 @@
 #include <new> //for placement new
 #include <algorithm> //for swap
 
-//pattern X Macro.
-
-//Layout used 
+/*Layout used*/
 enum Layout{
     soa,
     aos
@@ -29,7 +23,7 @@ class _HybridArray;
 
 class AoSCell;
 
-//Field indexes, (size included)
+/*Field indexes, (size included)*/
 enum FieldIndex{
     #define Field(type, name)\
         IDX_##name,
@@ -37,7 +31,7 @@ enum FieldIndex{
     #define FieldArray(type, name, size)\
         IDX_##name,
 
-    #include STR(FIELDS_PATH)
+    INITFIELDS
     #undef Field
     #undef FieldArray
     Fields_Number //n-th enum saves the defined fields number
@@ -64,7 +58,7 @@ struct OffsetDescriptor{
             /*Given the previously computed (and aligned) offset, compute the next offset by multiplyng the capacity(number of elements) with the single element size and repeat, then align*/\
             currentOffset = currentOffset + (capacity * sizeof(type)*size);
         
-        #include STR(FIELDS_PATH)
+        INITFIELDS
         #undef Field
         #undef FieldArray
 
@@ -78,7 +72,7 @@ class AoSCell{
         #define Field(type, name) type name; 
         #define FieldArray(type, name, size) type name[size];
 
-        #include STR(FIELDS_PATH)
+        INITFIELDS
         #undef Field
         #undef FieldArray
     public:
@@ -99,7 +93,7 @@ class AoSCell{
             type* get##name(){return name;}\
             const type* get##name() const{return name;}
 
-        #include STR(FIELDS_PATH)
+        INITFIELDS
         #undef Field
         #undef FieldArray
 
@@ -177,7 +171,7 @@ class Proxy{
                 }\
             }
 
-        #include STR(FIELDS_PATH)
+        INITFIELDS
         #undef Field
         #undef FieldArray
 
@@ -227,7 +221,7 @@ class _HybridArray{
                         }\
                     }
                 
-                #include STR(FIELDS_PATH)
+                INITFIELDS
                 #undef Field   
                 #undef FieldArray
             }
@@ -258,7 +252,7 @@ class _HybridArray{
                             field_ptr[i].~DestructorType();\
                         }\
                     }    
-                #include STR(FIELDS_PATH)
+                INITFIELDS
                 #undef Field   
                 #undef FieldArray
 
