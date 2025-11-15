@@ -1,25 +1,25 @@
-#ifndef HYBRYD_STRUCTS
-#define HYBRID_STRUCTS
+#ifdef HYBRIDARRAY_HEADERS
 
 #ifndef INITFIELDS
-    #error "\033[31mERROR: INITFIELDS macro not included.\n USAGE:\n 1.define INITFIELDS, and inside it add your desired Field or FieldArray fields.\n 2. include this library\033[0m"
+    #error "ERROR: INITFIELDS macro not included.\n USAGE:\n 1.define INITFIELDS, and inside it add your desired Field or FieldArray fields.\n 2. include this library"
 #endif
 
-#include <cstdlib> //for malloc, free, ...
-#include <type_traits> //for is_trivially_destructible_v<V>
-#include <new> //for placement new
-#include <algorithm> //for swap
-
-/*Layout used*/
-enum Layout{
-    soa,
-    aos
-};
+#ifndef LAYOUT
+    #error "ERROR: LAYOUT not specified: specify whether to compile (g++) in SoA (by adding -D LAYOUT = soa) or AoS (by adding -D LAYOUT = aos).")
+#endif
 
 template<Layout L>
 class Proxy;
 template<Layout L>
-class _HybridArray;
+class StaticArray;
+template<Layout L>
+class Iterator;
+template<Layout L>
+class ConstIterator;
+template<Layout L>
+class ReverseIterator;
+template<Layout L>
+class ConstReverseIterator;
 
 class AoSCell;
 
@@ -98,7 +98,7 @@ class AoSCell{
         #undef FieldArray
 
         template<Layout L>
-        friend class _HybridArray;
+        friend class StaticArray;
 
         template<Layout L>
         friend class Proxy;
@@ -175,19 +175,19 @@ class Proxy{
         #undef Field
         #undef FieldArray
 
-        friend class _HybridArray<L>;
+        friend class StaticArray<L>;
 };
 
 //The array with a predefined layout, defined in compile-time.
 template<Layout L>
-class _HybridArray{
+class StaticArray{
     private:
         void * ptr;
         OffsetDescriptor descriptor; //offset description (used for SoA only)       
         size_t capacity; //the number of elements
 
     public: 
-     _HybridArray(size_t capacity): 
+        StaticArray(size_t capacity): 
             capacity(capacity), 
             descriptor(capacity),
             ptr(nullptr)
@@ -227,8 +227,12 @@ class _HybridArray{
             }
         }
 
+        // todo ADD COPY CONSTRUCTOR AND OPERATOR =.
+        StaticArray(const StaticArray& other) = delete;
+        StaticArray& operator=(const StaticArray& other) = delete;
+
         //delete the pointer, given the layout
-         _HybridArray(){
+        ~StaticArray(){
             if constexpr(L == aos)
                 delete[] static_cast<AoSCell*>(ptr);
             else if constexpr(L == soa){
@@ -260,17 +264,188 @@ class _HybridArray{
             }
         }
 
+        /*ITERATORS*/
+        //classic forward iterators
+        Iterator begin(){
+            return Iterator(*this, 0);
+        }
+
+        Iterator end(){
+            return Iterator(*this, capacity);
+        }
+
+        const ConstIterator cbegin() const{
+            return ConstIterator(*this, 0);
+        }
+
+        const ConstIterator cend() const{
+            return ConstIterator(*this, capacity);
+        }
+
+        //reverse iterators
+        ReverseIterator rbegin(){
+            return ReverseIterator(*this, capacity-1);
+        }
+
+        ReverseIterator rend(){
+            return ReverseIterator(*this, (size_t)-1);
+        }
+
+        const ConstReverseIterator crbegin() const{
+            return ConstReverseIterator(*this, capacity -1);
+        }
+
+        const ConstReverseIterator crend() const{
+            return ConstReverseIterator(*this, (size_t)-1);
+        }
+
+        /*CAPACITY*/
+        size_t capacity() const{
+            return capacity;
+        }
+
+        /*ELEMENT ACCESS*/
         Proxy<L> operator[](size_t index){
             return Proxy<L>(ptr, descriptor, index);
         } 
 
-        void swap (_HybridArray &other){
+        Proxy<L> at(size_t index){
+            if(index >= capacity) 
+                throw std::out_of_range("Index specified needs to be less than capacity.");
+            return Proxy<L>(ptr, descriptor, index);
+        } 
+
+        Proxy<L> front(){
+            return Proxy<L>(ptr, descriptor, 0);
+        } 
+
+        Proxy<L> back(){
+            return Proxy<L>(ptr, descriptor, capacity-1);
+        } 
+
+        /*MODIFIERS*/
+        void swap (StaticArray &other){
             std::swap(ptr, other.ptr);
-            //std::swap(capacity, other.capacity);
-            //std::swap(descriptor, other.descriptor);
+            std::swap(capacity, other.capacity);
+            std::swap(descriptor, other.descriptor);
+        }
+
+        friend class Iterator;
+        friend class ConstIterator;
+        friend class ReverseIterator;
+        friend class ConstReverseIterator;
+};
+
+template<Layout L>
+class Iterator{
+    private:
+        StaticArray<L> & staticArray;
+        size_t index;
+    public: 
+        Iterator(StaticArray<L> & staticArray, size_t index): staticArray(staticArray), index(index){}
+
+        Iterator& operator++(){
+            index ++;
+            return *this;
+        }
+
+        Iterator& operator--(){
+            index --;
+            return *this;
+        }
+
+        //todo add checks!
+        Iterator& operator-=(size_t n){
+            index -= n;
+            return *this;
+        }
+
+        Iterator& operator+=(size_t n){
+            index += n;
+            return *this;
+        }
+
+        Proxy<L> operator*(){
+            return Proxy<L>(staticArray.ptr, staticArray.descriptor, index);
+        }
+
+        bool operator==(Iterator& other){
+            return index == other.index;
         }
 };
 
+template<Layout L>
+class ReverseIterator{
+    private:
+        StaticArray<L> & staticArray;
+        size_t index;
+    public: 
+        ReverseIterator(StaticArray<L> & staticArray, size_t index): staticArray(staticArray), index(index){}
 
+        ReverseIterator& operator++(){
+            index --;
+            return *this;
+        }
+
+        ReverseIterator& operator--(){
+            index ++;
+            return *this;
+        }
+
+        //todo add checks!
+        ReverseIterator& operator-=(size_t n){
+            index += n;
+            return *this;
+        }
+
+        ReverseIterator& operator+=(size_t n){
+            index -= n;
+            return *this;
+        }
+
+        Proxy<L> operator*(){
+            return Proxy<L>(staticArray.ptr, staticArray.descriptor, index);
+        }
+
+        bool operator==(ReverseIterator& other){
+            return index == other.index;
+        }
+};
+
+template<Layout L>
+class ConstIterator{
+    private:
+        const StaticArray<L> & staticArray;
+        size_t index;
+    public: 
+        ConstIterator(const StaticArray<L> & staticArray, size_t index): staticArray(staticArray), index(index){}
+
+        const Proxy<L> operator*()const {
+            reutrn Proxy<L>(staticArray.ptr, staticArray.descriptor, index);
+        }
+
+        bool operator==(Iterator& other){
+            return index == other.index;
+        }
+};
+
+template<Layout L>
+class ConstReverseIterator{
+    private:
+        const StaticArray<L> & staticArray;
+        size_t index;
+    public: 
+        ConstReverseIterator(const StaticArray<L> & staticArray, size_t index): staticArray(staticArray), index(index){}
+
+        const Proxy<L> operator*()const {
+            return Proxy<L>(staticArray.ptr, staticArray.descriptor, index);
+        }
+
+        bool operator==(Iterator& other){
+            return index == other.index;
+        }
+};
+
+using HybridArray = StaticArray<LAYOUT>;
 
 #endif
