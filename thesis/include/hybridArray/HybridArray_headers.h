@@ -6,6 +6,7 @@
 #include <new> //for placement new
 #include <algorithm> //for swap
 #include <stdexcept>
+#include <iterator>
 
 /*Layout used*/
 enum Layout{
