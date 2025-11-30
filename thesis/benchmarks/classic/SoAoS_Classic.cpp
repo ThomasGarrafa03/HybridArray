@@ -9,7 +9,6 @@ using namespace std;
 
 struct SoA{
     int *a;
-    //char *c;
     float *b; 
     string *name;
 
@@ -18,14 +17,13 @@ struct SoA{
     SoA(int size){
         this->size = size;
         a = new int[size]; 
-        //c = new char[size];
         b = new float[size];
         name = new string[size];
 
         int diffAB = (char*)a -(char*)b;
         int diffBName = (char*)b -(char*)name;
 
-        printf("[SoA-debug]diffAB: %d\n diffBName: %d\n" , diffAB, diffBName);
+        //printf("[SoA-debug]diffAB: %d\n diffBName: %d\n" , diffAB, diffBName);
 
     }
 

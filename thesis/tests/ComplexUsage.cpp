@@ -3,35 +3,33 @@
 
 #define SIZE 10000
 
-namespace Person{
-    #define INITFIELDS \
-        FieldArray(char, Name, 30)\
-        Field(int, Age)\
-        Field(float, Weight)
+#define ARRAY_NAME Sciddica
+#define INITFIELDS\
+    Field(float, h)\
+    Field(float, z)\
+    FieldArray(float, f, 4)
 
-    #include "../include/hybridArray/HybridArray_core.h"
+#include "../include/hybridArray/HybridArray_core.h"
 
-    #undef INITFIELDS
-}
+#define ARRAY_NAME Physics
+#define INITFIELDS\
+    Field(float, X)\
+    Field(float, Y)\
+    Field(float, Z)\
+    Field(float, VX)\
+    Field(float, VY)\
+    Field(float, VZ)\
 
-namespace School{
-    #define INITFIELDS \
-        FieldArray(char, Name, 30)\
-        FieldArray(char, Class, 2)
-
-    #include "../include/hybridArray/HybridArray_core.h"
-
-    #undef INITFIELDS
-}
+#include "../include/hybridArray/HybridArray_core.h"
 
 int main(){
-    Person::HybridArray arr1(SIZE);
-    arr1[3].setWeight(12.2);
+    PhysicsHybridArray myArr(1222);
+    SciddicaHybridArray mySciddicaArr(123);
+    myArr[4].setVX(12);
 
-    School::HybridArray arr2(SIZE);
-    arr2[2].getClass()[1] = '2';
+    mySciddicaArr[2].geth();
 
-    std::cout << arr1[3].getWeight()<<std::endl<<arr2[2].getClass()[1]<<std::endl;
+    //std::cout << arr1[3].getWeight()<<std::endl<<arr2[2].getClass()[1]<<std::endl;
 }
 
 

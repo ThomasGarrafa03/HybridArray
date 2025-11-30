@@ -14,4 +14,8 @@ enum Layout{
     aos
 };
 
+#ifdef __INTELLISENSE__
+    #define LAYOUT soa
+#endif
+
 #endif

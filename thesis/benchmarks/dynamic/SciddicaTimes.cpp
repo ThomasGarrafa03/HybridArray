@@ -17,7 +17,7 @@ enum Dir{
 #include <algorithm>
 #include <cstdio>
 
-#define TIMES 100
+#define TIMES 10
 
 #define v(r,c) (r)*NCOLS+(c)
 #define NROWS 1002
