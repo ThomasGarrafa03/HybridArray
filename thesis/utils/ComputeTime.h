@@ -1,3 +1,6 @@
+#ifndef COMPUTE_TIME
+#define COMPUTE_TIME
+
 #include <chrono>
 using namespace std;
 //questa semplice funzione calcola il tempo medio impiegato ad eseguire la funzione Func times volte, sfruttando la libreria chrono (migliore rispetto a time)
@@ -13,3 +16,5 @@ double computeTime(Func f, int times) {
     }
     return total_duration / times; // Ritorna la media in millisecondi
 }
+
+#endif

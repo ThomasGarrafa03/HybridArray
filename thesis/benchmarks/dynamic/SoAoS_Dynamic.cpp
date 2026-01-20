@@ -3,17 +3,22 @@
 #include <string>
 #include <iostream>
 
-#define ARRAY_NAME Particles
-#define INITFIELDS \
-    Field(float, x) \
-    Field(float, y) \
-    Field(float, z) \
-    Field(float, vx) \
-    Field(float, vy) \
-    Field(float, vz) \
-    FieldArray(int, padding, 4) /* Useless data */
+/******************/
 
+//programmer defines its fields
+#define INITFIELDS \
+    Field(float, X) \
+    Field(float, Y) \
+    Field(float, Z) \
+    Field(float, VX) \
+    Field(float, VY) \
+    Field(float, VZ) \
+
+//includes HybridArray
 #include "../../include/hybridArray/HybridArray.h"
+
+/*******************/
+
 #include "../../utils/ComputeTime.h"
 using namespace std;
 
@@ -29,36 +34,35 @@ float randomFloat() {
 
 int main(int argc, char** argv){  
     
-    ParticlesHybridArray arr(SIZE);
+    //done!
+    HybridArray arr(SIZE);
 
     float dt = 0.016f;
 
+    //array accessed via operator [], getters, setters
     for(size_t i=0; i<SIZE; ++i) {
-        arr[i].set_vx(randomFloat());
-        arr[i].set_vy(randomFloat());
-        arr[i].set_vz(randomFloat());
+        arr[i].setVX(randomFloat());
+        arr[i].setVY(randomFloat());
+        arr[i].setVZ(randomFloat());
     }
 
     auto simulation = [&](){
         for (int iter = 0; iter < ITERATIONS; ++iter) {
-            // Usiamo il tuo iteratore o accesso indice
             for (size_t i = 0; i < SIZE; ++i) {
-                // L'accesso è identico per AoS e SoA grazie al Proxy!
                 auto p = arr[i]; 
             
-                float newX = p.get_x() + p.get_vx() * dt;
-                float newY = p.get_y() + p.get_vy() * dt;
-                float newZ = p.get_z() + p.get_vz() * dt;
+                float newX = p.getX() + p.getVX() * dt;
+                float newY = p.getY() + p.getVY() * dt;
+                float newZ = p.getZ() + p.getVZ() * dt;
 
-                p.set_x(newX);
-                p.set_y(newY);
-                p.set_z(newZ);
+                p.setX(newX);
+                p.setY(newY);
+                p.setZ(newZ);
             }
         }
     };
 
     double time = computeTime(simulation, REPEAT_TIMES);
 
-    std::cout<< "Average "<< LAYOUT << " time elapsed: " << time <<"ms";
-
+    std::cout<< "Average time elapsed: " << time <<" ms";
 }

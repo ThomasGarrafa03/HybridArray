@@ -92,8 +92,7 @@ public:
 				CURRENT_AOSCELL* base = static_cast<CURRENT_AOSCELL*>(ptr); \
 				return base[_index].name; \
 			} else { \
-				void* base = ptr; \
-				type* field_ptr = reinterpret_cast<type*>(static_cast<char*>(base) + descriptor.offsets[IDX_##name]); \
+				type* field_ptr = reinterpret_cast<type*>(static_cast<char*>(ptr) + descriptor.offsets[IDX_##name]); \
 				return field_ptr[_index]; \
 			} \
 		} \
@@ -102,8 +101,7 @@ public:
 				CURRENT_AOSCELL* base = static_cast<CURRENT_AOSCELL*>(ptr); \
 				return base[_index].name; \
 			} else { \
-				void* base = ptr; \
-				type* field_ptr = reinterpret_cast<type*>(static_cast<char*>(base) + descriptor.offsets[IDX_##name]); \
+				type* field_ptr = reinterpret_cast<type*>(static_cast<char*>(ptr) + descriptor.offsets[IDX_##name]); \
 				return field_ptr[_index]; \
 			} \
 		} \
@@ -112,8 +110,7 @@ public:
 				CURRENT_AOSCELL* base = static_cast<CURRENT_AOSCELL*>(ptr); \
 				base[_index].name = name; \
 			} else { \
-				void* base = ptr; \
-				type* field_ptr = reinterpret_cast<type*>(static_cast<char*>(base) + descriptor.offsets[IDX_##name]); \
+				type* field_ptr = reinterpret_cast<type*>(static_cast<char*>(ptr) + descriptor.offsets[IDX_##name]); \
 				field_ptr[_index] = name; \
 			} \
 		}
@@ -124,8 +121,7 @@ public:
 				CURRENT_AOSCELL* base = static_cast<CURRENT_AOSCELL*>(ptr); \
 				return base[_index].name; \
 			} else { \
-				void* base = ptr; \
-				type* field_ptr = reinterpret_cast<type*>(static_cast<char*>(base) + descriptor.offsets[IDX_##name]); \
+				type* field_ptr = reinterpret_cast<type*>(static_cast<char*>(ptr) + descriptor.offsets[IDX_##name]); \
 				return field_ptr + (_index * size); \
 			} \
 		} \
@@ -134,8 +130,7 @@ public:
 				CURRENT_AOSCELL* base = static_cast<CURRENT_AOSCELL*>(ptr); \
 				return base[_index].name; \
 			} else { \
-				void* base = ptr; \
-				type* field_ptr = reinterpret_cast<type*>(static_cast<char*>(base) + descriptor.offsets[IDX_##name]); \
+				type* field_ptr = reinterpret_cast<type*>(static_cast<char*>(ptr) + descriptor.offsets[IDX_##name]); \
 				return field_ptr + (_index * size); \
 			} \
 		}
@@ -321,5 +316,15 @@ using CURRENT_HYBRIDARRAY = CURRENT_STATICARRAY<LAYOUT>;
 #undef CURRENT_AOSCELL
 
 #else 
-	# error " HybridArray_headers . h must be included before the core . " # endif
+	#ifndef HYBRYDARRAY_HEADERS
+		# error "HybridArray_headers.h must be included before the core file." 
+	#endif
+
+	#ifndef INITFIELDS
+		# error "Define INITFIELDS macro before including HybridArray.h or HybrydArray_core." 
+	#endif
+
+	#ifndef LAYOUT
+		# error "Define LAYOUT macro during compilation \nUSAGE: g++ myFile.cpp -D LAYOUT=[soa|aos]" 
+	#endif
 #endif

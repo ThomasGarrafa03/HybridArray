@@ -1,132 +1,97 @@
-#include "../../utils/ComputeTime.h"
 #include <cstdio>
+#include <random>
+#include <iomanip>
 #include <string>
+#include <iostream>
+#include "../../utils/ComputeTime.h"
 
 using namespace std;
 
 #define SIZE 10000000
-#define TIMES 10
+#define REPEAT_TIMES 10
+#define ITERATIONS 10
 
-struct SoA{
-    int *a;
-    float *b; 
-    string *name;
+struct SoA {
+    float *x, *y, *z;
+    float *vx, *vy, *vz;
+    size_t _size;
 
-    int size;
-
-    SoA(int size){
-        this->size = size;
-        a = new int[size]; 
-        b = new float[size];
-        name = new string[size];
-
-        int diffAB = (char*)a -(char*)b;
-        int diffBName = (char*)b -(char*)name;
-
-        //printf("[SoA-debug]diffAB: %d\n diffBName: %d\n" , diffAB, diffBName);
-
+    SoA(size_t size) : _size(size) {
+        x = new float[size];
+        y = new float[size];
+        z = new float[size];
+        vx = new float[size];
+        vy = new float[size];
+        vz = new float[size];
     }
-
-    ~SoA(){
-        delete[]a;
-        delete[]b;
-        //delete[]c;
-        delete[] name;
+    ~SoA() {
+        delete[] x; delete[] y; delete[] z;
+        delete[] vx; delete[] vy; delete[] vz;
     }
 };
 
-struct Data{
-    int a;
-    //char c;
-    float b;
-    string name;
-
-    Data(){
-        a = 0;
-        b = 0.0;
-        //c = ' ';
-    }
+// --- AOS CLASSICO ---
+struct ParticleAoS {
+    float x, y, z;
+    float vx, vy, vz;
 };
 
-struct AoS{
-    Data* data;
-    int size;
-
-    AoS(int size){
-        this->size = size;
-        data = new Data[size];
-    }
-
-    ~AoS(){
-        delete[] data;
-    }
+class AoS {
+    ParticleAoS* data;
+public:
+    AoS(size_t size) { data = new ParticleAoS[size]; }
+    ~AoS() { delete[] data; }
+    // Importante: inline per competere con la tua libreria
+    inline ParticleAoS& operator[](size_t i) { return data[i]; }
 };
+
+float randomFloat() {
+    static std::mt19937 gen(42);
+    static std::uniform_real_distribution<float> dis(0.0f, 100.0f);
+    return dis(gen);
+}
 
 int main() {
     SoA soa(SIZE);
     AoS aos(SIZE);
+    float dt = 0.016f;
 
-    double sumA = 0;
-    double sumB = 0;
-    string concat = "";
+    auto simulation_soa = [&]() {
+        // OTTIMIZZAZIONE MANUALE (Hoisting):
+        // Copiamo i puntatori in variabili locali.
+        // Questo dice al compilatore: "Non ricaricare soa.x dalla struct ogni volta!"
+        // L'uso di __restrict (estensione GCC/Clang) sarebbe l'ideale qui.
+        float* __restrict x = soa.x;
+        float* __restrict y = soa.y;
+        float* __restrict z = soa.z;
+        float* __restrict vx = soa.vx;
+        float* __restrict vy = soa.vy;
+        float* __restrict vz = soa.vz;
 
-    auto aos_func_separated = [&]() {
-        for (int i = 0; i < SIZE; ++i) { aos.data[i].a = i; }
-        for (int i = 0; i < SIZE; ++i) { aos.data[i].b = 0.5f * i; }
-        for (int i = 0; i< SIZE; ++i) {aos.data[i].name = "Helo";}
-
-        for (int i = 0; i < SIZE; ++i) { sumA += aos.data[i].a; }
-        for (int i = 0; i < SIZE; ++i) { sumB += aos.data[i].b; }
-        for (int i = 0; i< SIZE; ++i) {concat += aos.data[i].name;}
-    };
-
-    auto soa_func_separated = [&]() {
-        for (int i = 0; i < SIZE; ++i) { soa.a[i] = i; }
-        for (int i = 0; i < SIZE; ++i) { soa.b[i] = 0.5f * i; }
-        for (int i = 0; i< SIZE; ++i) {soa.name[i]= "Helo";}
-
-        for (int i = 0; i < SIZE; ++i) { sumA += soa.a[i]; }
-        for (int i = 0; i < SIZE; ++i) { sumB += soa.b[i]; }
-        for (int i = 0; i< SIZE; ++i) {concat += soa.name[i];}
-
-    };
-
-    auto aos_func_single = [&]() {
-        for (int i = 0; i < SIZE; ++i) { 
-            aos.data[i].a = i; 
-            aos.data[i].b = 0.5f * i; 
-            aos.data[i].name = "Helo";
-        }
-
-        for (int i = 0; i < SIZE; ++i) { 
-            sumA += aos.data[i].a; 
-            sumB += aos.data[i].b;
-            concat += aos.data[i].name; 
+        for (int iter = 0; iter < ITERATIONS; ++iter) {
+            for (size_t i = 0; i < SIZE; ++i) {
+                x[i] += vx[i] * dt;
+                y[i] += vy[i] * dt;
+                z[i] += vz[i] * dt;
+            }
         }
     };
 
-    auto soa_func_single = [&]() {
-        for (int i = 0; i < SIZE; ++i) { 
-            soa.a[i] = i; 
-            soa.b[i] = 0.5f * i;
-            soa.name[i]= "Helo";
-        }
+    auto simulation_aos = [&]() {
+        for (int iter = 0; iter < ITERATIONS; ++iter) {
+            for (size_t i = 0; i < SIZE; ++i) {
+                ParticleAoS& cell = aos[i]; 
 
-        for (int i = 0; i < SIZE; ++i) { 
-            sumA += soa.a[i]; 
-            sumB += soa.b[i];
-            concat += soa.name[i];
+                cell.x += cell.vx * dt;
+                cell.y += cell.vy * dt;
+                cell.z += cell.vz * dt;
+            }
         }
     };
-    
-    double time_aos_separated = computeTime(aos_func_separated, TIMES);
-    double time_soa_separated = computeTime(soa_func_separated, TIMES);
-    double time_aos_single = computeTime(aos_func_single, TIMES);
-    double time_soa_single = computeTime(soa_func_single, TIMES);
 
-    printf("AOS average time elapsed (separated for): %f\n", time_aos_separated);
-    printf("SOA average time elapsed (separated for): %f\n", time_soa_separated);
-    
-    printf("AOS average time elapsed (single for): %f\n", time_aos_single);
-    printf("SOA average time elapsed (single for): %f\n", time_soa_single);
+    double soa_time = computeTime(simulation_soa, REPEAT_TIMES);
+    double aos_time = computeTime(simulation_aos, REPEAT_TIMES); 
+
+    printf("Classic SoA time: %f ms\n", soa_time);
+    printf("Classic AoS time: %f ms\n", aos_time);
 }
