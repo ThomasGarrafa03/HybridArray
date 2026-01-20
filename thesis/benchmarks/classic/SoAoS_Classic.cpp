@@ -1,3 +1,7 @@
+#ifndef SIZE 
+#define SIZE 10000000
+#endif
+
 #include <cstdio>
 #include <random>
 #include <iomanip>
@@ -7,7 +11,6 @@
 
 using namespace std;
 
-#define SIZE 10000000
 #define REPEAT_TIMES 10
 #define ITERATIONS 10
 
@@ -41,7 +44,6 @@ class AoS {
 public:
     AoS(size_t size) { data = new ParticleAoS[size]; }
     ~AoS() { delete[] data; }
-    // Importante: inline per competere con la tua libreria
     inline ParticleAoS& operator[](size_t i) { return data[i]; }
 };
 
@@ -60,7 +62,6 @@ int main() {
         // OTTIMIZZAZIONE MANUALE (Hoisting):
         // Copiamo i puntatori in variabili locali.
         // Questo dice al compilatore: "Non ricaricare soa.x dalla struct ogni volta!"
-        // L'uso di __restrict (estensione GCC/Clang) sarebbe l'ideale qui.
         float* __restrict x = soa.x;
         float* __restrict y = soa.y;
         float* __restrict z = soa.z;
@@ -92,6 +93,6 @@ int main() {
     double soa_time = computeTime(simulation_soa, REPEAT_TIMES);
     double aos_time = computeTime(simulation_aos, REPEAT_TIMES); 
 
-    printf("Classic SoA time: %f ms\n", soa_time);
-    printf("Classic AoS time: %f ms\n", aos_time);
+    printf("Classic soa time elapsed: %f ms\n", soa_time);
+    printf("Classic aos time elapsed: %f ms\n", aos_time);
 }

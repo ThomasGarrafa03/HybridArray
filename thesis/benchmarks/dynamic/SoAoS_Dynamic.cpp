@@ -1,3 +1,10 @@
+#ifndef SIZE 
+#define SIZE 10000000
+#endif
+
+#define xSTR(a) STR(a)
+#define STR(a) #a
+
 #include <random>
 #include <iomanip>
 #include <string>
@@ -16,13 +23,12 @@
 
 //includes HybridArray
 #include "../../include/hybridArray/HybridArray.h"
-
 /*******************/
+
 
 #include "../../utils/ComputeTime.h"
 using namespace std;
 
-#define SIZE 10000000
 #define ITERATIONS 10
 #define REPEAT_TIMES 10
 
@@ -64,5 +70,6 @@ int main(int argc, char** argv){
 
     double time = computeTime(simulation, REPEAT_TIMES);
 
-    std::cout<< "Average time elapsed: " << time <<" ms";
+
+    std::cout<< "Dynamic " << xSTR(LAYOUT) <<" time elapsed: " << time <<" ms";
 }
