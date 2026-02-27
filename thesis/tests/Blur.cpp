@@ -14,7 +14,7 @@ using namespace std;
 
 #define i_j i*cols +j
 
-#define FILENAME_TOBLUR "ToBlur.bmp"
+#define FILENAME_TOBLUR "Default.bmp"
 #define FILENAME_BLUR "Blurred.bmp"
 
 void blurCell(int i, int j, int cols, HybridArray &readM, HybridArray &writeM){
