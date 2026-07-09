@@ -191,7 +191,7 @@ The project prioritizes architectural clarity and performance analysis over prod
 
 ## License
 
-MIT License (or specify your license here)
+HibridArray is distributed under the license LGPL 2.1
 
 ## Author
 
